@@ -14,7 +14,6 @@ import {
     collection,
     getDocs,
     query,
-    where,
     orderBy
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
@@ -470,11 +469,6 @@ async function loadDigiProfilesWorks() {
                     db,
                     WORKS_COLLECTION
                 ),
-                where(
-                    "active",
-                    "==",
-                    true
-                ),
                 orderBy(
                     "createdAt",
                     "desc"
@@ -499,13 +493,30 @@ async function loadDigiProfilesWorks() {
         }
 
 
+        /*
+           Only active works should appear
+           on the public website.
+        */
+
         const works =
-            snapshot.docs.map(
-                (doc) => ({
-                    id: doc.id,
-                    ...doc.data()
-                })
-            );
+            snapshot.docs
+                .map(
+                    (doc) => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })
+                )
+                .filter(
+                    (work) =>
+                        work.active === true
+                );
+
+
+        if (!works.length) {
+
+            return;
+
+        }
 
 
         renderDigiProfilesWorks(
@@ -942,7 +953,7 @@ function setupWorkRevealAnimation(
 
     if (
         !grid ||
-        !"IntersectionObserver" in window
+        !("IntersectionObserver" in window)
     ) {
         return;
     }
