@@ -3,14 +3,44 @@
    MAIN JAVASCRIPT
    ========================================================= */
 
+
+/* =========================================================
+   FIREBASE
+   PUBLIC WORKS READ ONLY
+   ========================================================= */
+
+import {
+    getFirestore,
+    collection,
+    getDocs,
+    query,
+    where,
+    orderBy
+} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+import { app } from "./firebase-config.js";
+
+const db = getFirestore(app);
+
+const WORKS_COLLECTION = "digiprofiles_works";
+
+
+/* =========================================================
+   MAIN
+   ========================================================= */
+
 document.addEventListener("DOMContentLoaded", () => {
+
 
     /* =====================================================
        MOBILE MENU
        ===================================================== */
 
-    const menuToggle = document.getElementById("menuToggle");
-    const mainNav = document.getElementById("mainNav");
+    const menuToggle =
+        document.getElementById("menuToggle");
+
+    const mainNav =
+        document.getElementById("mainNav");
 
     if (menuToggle && mainNav) {
 
@@ -26,6 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             menuToggle.textContent =
                 isOpen ? "✕" : "☰";
+
         });
 
 
@@ -45,7 +76,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     "false"
                 );
 
-                menuToggle.textContent = "☰";
+                menuToggle.textContent =
+                    "☰";
+
             });
 
         });
@@ -150,7 +183,9 @@ document.addEventListener("DOMContentLoaded", () => {
        ===================================================== */
 
     const sections =
-        document.querySelectorAll("main section[id]");
+        document.querySelectorAll(
+            "main section[id]"
+        );
 
     const navigationLinks =
         document.querySelectorAll(
@@ -179,8 +214,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     scrollPosition >= sectionTop &&
                     scrollPosition < sectionBottom
                 ) {
+
                     currentSection =
                         section.id;
+
                 }
 
             });
@@ -191,7 +228,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     link.getAttribute("href");
 
                 if (
-                    href === `#${currentSection}`
+                    href ===
+                    `#${currentSection}`
                 ) {
 
                     link.classList.add("active");
@@ -273,10 +311,14 @@ document.addEventListener("DOMContentLoaded", () => {
        ===================================================== */
 
     const profilePreview =
-        document.querySelector(".profile-preview");
+        document.querySelector(
+            ".profile-preview"
+        );
 
     const heroVisual =
-        document.querySelector(".hero-visual");
+        document.querySelector(
+            ".hero-visual"
+        );
 
     if (
         profilePreview &&
@@ -319,6 +361,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 profilePreview.style.transform =
                     `rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(-1deg)`;
+
             }
         );
 
@@ -340,16 +383,27 @@ document.addEventListener("DOMContentLoaded", () => {
        CURRENT YEAR
        ===================================================== */
 
-    const footerYear =
-        document.querySelector(".footer-copy");
+    const footerCopy =
+        document.querySelector(
+            ".footer-copy"
+        );
 
-    if (footerYear) {
+    if (footerCopy) {
 
         const currentYear =
             new Date().getFullYear();
 
-        footerYear.textContent =
-            `© ${currentYear} DigiProfiles.in`;
+        const yearElement =
+            document.getElementById(
+                "currentYear"
+            );
+
+        if (yearElement) {
+
+            yearElement.textContent =
+                currentYear;
+
+        }
 
     }
 
@@ -366,7 +420,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (
                 event.key === "Escape" &&
                 mainNav &&
-                mainNav.classList.contains("active")
+                mainNav.classList.contains(
+                    "active"
+                )
             ) {
 
                 mainNav.classList.remove(
@@ -382,6 +438,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     menuToggle.textContent =
                         "☰";
+
                 }
 
             }
@@ -389,4 +446,634 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     );
 
+
+    /* =====================================================
+       LOAD DIGIPROFILES WORKS
+       ===================================================== */
+
+    loadDigiProfilesWorks();
+
 });
+
+
+/* =========================================================
+   LOAD WORKS FROM FIRESTORE
+   ========================================================= */
+
+async function loadDigiProfilesWorks() {
+
+    try {
+
+        const worksQuery =
+            query(
+                collection(
+                    db,
+                    WORKS_COLLECTION
+                ),
+                where(
+                    "active",
+                    "==",
+                    true
+                ),
+                orderBy(
+                    "createdAt",
+                    "desc"
+                )
+            );
+
+
+        const snapshot =
+            await getDocs(
+                worksQuery
+            );
+
+
+        /* -------------------------------------------------
+           No work yet
+           ------------------------------------------------- */
+
+        if (snapshot.empty) {
+
+            return;
+
+        }
+
+
+        const works =
+            snapshot.docs.map(
+                (doc) => ({
+                    id: doc.id,
+                    ...doc.data()
+                })
+            );
+
+
+        renderDigiProfilesWorks(
+            works
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "DigiProfiles works could not be loaded:",
+            error
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CREATE WORK SECTION
+   ========================================================= */
+
+function renderDigiProfilesWorks(works) {
+
+    if (!Array.isArray(works) || !works.length) {
+        return;
+    }
+
+
+    /*
+       Do not create duplicate section
+    */
+
+    if (
+        document.getElementById(
+            "digiprofilesWorks"
+        )
+    ) {
+        return;
+    }
+
+
+    const main =
+        document.querySelector("main");
+
+    if (!main) {
+        return;
+    }
+
+
+    /* =====================================================
+       SECTION
+       ===================================================== */
+
+    const section =
+        document.createElement("section");
+
+    section.className =
+        "features-section digiprofiles-works-section";
+
+    section.id =
+        "works";
+
+
+    /* =====================================================
+       CONTAINER
+       ===================================================== */
+
+    const container =
+        document.createElement("div");
+
+    container.className =
+        "container";
+
+
+    /* =====================================================
+       HEADING
+       ===================================================== */
+
+    const heading =
+        document.createElement("div");
+
+    heading.className =
+        "section-heading";
+
+
+    heading.innerHTML = `
+        <span class="section-label">
+            OUR WORK
+        </span>
+
+        <h2>
+            Websites we've
+            <span>created.</span>
+        </h2>
+
+        <p>
+            Explore professional websites and digital profiles
+            created by DigiProfiles.
+        </p>
+    `;
+
+
+    /* =====================================================
+       WORK GRID
+       ===================================================== */
+
+    const grid =
+        document.createElement("div");
+
+    grid.className =
+        "feature-grid digiprofiles-work-grid";
+
+
+    works.forEach((work) => {
+
+        const card =
+            createWorkCard(work);
+
+        grid.appendChild(card);
+
+    });
+
+
+    container.appendChild(
+        heading
+    );
+
+    container.appendChild(
+        grid
+    );
+
+    section.appendChild(
+        container
+    );
+
+
+    /*
+       Insert before Contact section.
+       This keeps Services, Locations,
+       Categories and About in their
+       original fixed positions.
+    */
+
+    const contactSection =
+        document.getElementById(
+            "contact"
+        );
+
+    if (contactSection) {
+
+        main.insertBefore(
+            section,
+            contactSection
+        );
+
+    } else {
+
+        main.appendChild(
+            section
+        );
+
+    }
+
+
+    /* =====================================================
+       ADD WORK LINK TO NAV
+       ===================================================== */
+
+    addWorksNavigationLink();
+
+
+    /* =====================================================
+       REVEAL ANIMATION FOR NEW CARDS
+       ===================================================== */
+
+    setupWorkRevealAnimation(
+        grid
+    );
+
+}
+
+
+/* =========================================================
+   CREATE SINGLE WORK CARD
+   ========================================================= */
+
+function createWorkCard(work) {
+
+    const card =
+        document.createElement("article");
+
+    card.className =
+        "feature-tile digiprofiles-work-card";
+
+
+    /* =====================================================
+       SAFE VALUES
+       ===================================================== */
+
+    const title =
+        work.title ||
+        "Website";
+
+
+    const description =
+        work.description ||
+        "Professional website created by DigiProfiles.";
+
+
+    const profileLink =
+        normalizeWebsiteUrl(
+            work.profileLink
+        );
+
+
+    const imageUrl =
+        work.imageUrl ||
+        "";
+
+
+    /* =====================================================
+       CARD IMAGE
+       ===================================================== */
+
+    let imageHtml = "";
+
+    if (imageUrl) {
+
+        imageHtml = `
+            <div class="digiprofiles-work-image">
+                <img
+                    src="${escapeHtml(imageUrl)}"
+                    alt="${escapeHtml(title)} website"
+                    loading="lazy"
+                >
+            </div>
+        `;
+
+    } else {
+
+        imageHtml = `
+            <div class="digiprofiles-work-image digiprofiles-work-placeholder">
+                <span>DP</span>
+            </div>
+        `;
+
+    }
+
+
+    /* =====================================================
+       CARD CONTENT
+       ===================================================== */
+
+    card.innerHTML = `
+        ${imageHtml}
+
+        <div class="feature-number">
+            WORK
+        </div>
+
+        <div class="feature-icon">
+            ◉
+        </div>
+
+        <h3>
+            ${escapeHtml(title)}
+        </h3>
+
+        <p>
+            ${escapeHtml(description)}
+        </p>
+
+        ${
+            profileLink
+                ? `
+                    <a
+                        class="btn btn-primary digiprofiles-work-button"
+                        href="${escapeHtml(profileLink)}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Visit Website →
+                    </a>
+                  `
+                : ""
+        }
+    `;
+
+
+    return card;
+
+}
+
+
+/* =========================================================
+   ADD WORK TO NAVIGATION
+   ========================================================= */
+
+function addWorksNavigationLink() {
+
+    const mainNav =
+        document.getElementById(
+            "mainNav"
+        );
+
+    if (!mainNav) {
+        return;
+    }
+
+
+    if (
+        mainNav.querySelector(
+            'a[href="#works"]'
+        )
+    ) {
+        return;
+    }
+
+
+    const contactLink =
+        mainNav.querySelector(
+            'a[href="#contact"]'
+        );
+
+
+    const worksLink =
+        document.createElement("a");
+
+    worksLink.href =
+        "#works";
+
+    worksLink.textContent =
+        "Our Work";
+
+
+    if (contactLink) {
+
+        mainNav.insertBefore(
+            worksLink,
+            contactLink
+        );
+
+    } else {
+
+        mainNav.appendChild(
+            worksLink
+        );
+
+    }
+
+
+    /*
+       Smooth navigation must also work
+       for dynamically created link.
+    */
+
+    worksLink.addEventListener(
+        "click",
+        (event) => {
+
+            const target =
+                document.getElementById(
+                    "works"
+                );
+
+            if (!target) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const header =
+                document.querySelector(
+                    ".site-header"
+                );
+
+            const headerHeight =
+                header
+                    ? header.offsetHeight
+                    : 0;
+
+            const targetPosition =
+                target.getBoundingClientRect().top +
+                window.scrollY -
+                headerHeight -
+                10;
+
+            window.scrollTo({
+                top: targetPosition,
+                behavior: "smooth"
+            });
+
+
+            const menuToggle =
+                document.getElementById(
+                    "menuToggle"
+                );
+
+            if (mainNav.classList.contains("active")) {
+
+                mainNav.classList.remove(
+                    "active"
+                );
+
+                if (menuToggle) {
+
+                    menuToggle.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+                    menuToggle.textContent =
+                        "☰";
+
+                }
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   WORK REVEAL ANIMATION
+   ========================================================= */
+
+function setupWorkRevealAnimation(
+    grid
+) {
+
+    if (
+        !grid ||
+        !"IntersectionObserver" in window
+    ) {
+        return;
+    }
+
+
+    const cards =
+        grid.querySelectorAll(
+            ".digiprofiles-work-card"
+        );
+
+
+    if (!cards.length) {
+        return;
+    }
+
+
+    const observer =
+        new IntersectionObserver(
+            (entries, obs) => {
+
+                entries.forEach(
+                    (entry) => {
+
+                        if (
+                            !entry.isIntersecting
+                        ) {
+                            return;
+                        }
+
+                        entry.target.classList.add(
+                            "reveal-visible"
+                        );
+
+                        obs.unobserve(
+                            entry.target
+                        );
+
+                    }
+                );
+
+            },
+            {
+                threshold: 0.12
+            }
+        );
+
+
+    cards.forEach((card) => {
+
+        card.classList.add(
+            "reveal-ready"
+        );
+
+        observer.observe(
+            card
+        );
+
+    });
+
+}
+
+
+/* =========================================================
+   NORMALIZE WEBSITE URL
+   ========================================================= */
+
+function normalizeWebsiteUrl(
+    url
+) {
+
+    if (
+        typeof url !== "string" ||
+        !url.trim()
+    ) {
+        return "";
+    }
+
+
+    const trimmed =
+        url.trim();
+
+
+    if (
+        trimmed.startsWith(
+            "https://"
+        ) ||
+        trimmed.startsWith(
+            "http://"
+        )
+    ) {
+
+        return trimmed;
+
+    }
+
+
+    return `https://${trimmed}`;
+
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+   ========================================================= */
+
+function escapeHtml(
+    value
+) {
+
+    return String(
+        value ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
